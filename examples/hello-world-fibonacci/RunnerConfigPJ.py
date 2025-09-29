@@ -61,7 +61,7 @@ class RunnerConfig:
         """Create and return the run_table model here. A run_table is a List (rows) of tuples (columns),
         representing each run performed"""
         factor1 = FactorModel("fib_type", ['iter', 'mem', 'rec'])
-        factor2 = FactorModel("problem_size", [10])
+        factor2 = FactorModel("problem_size", [10, 35])
         self.run_table_model = RunTableModel(
             factors=[factor1, factor2],
             repetitions = 1,
