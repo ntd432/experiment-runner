@@ -119,7 +119,7 @@ class RunnerConfig:
 
     def stop_measurement(self, context: RunnerContext) -> None:
         """Perform any activity here required for stopping measurements."""
-        os.kill(self.profiler.pid, signal.SIGINT) # graceful shutdown of powerjoular
+        # os.kill(self.profiler.pid, signal.SIGINT) # graceful shutdown of powerjoular
         self.profiler.wait()
         self.performance_profiler.kill()
         self.performance_profiler.wait()
