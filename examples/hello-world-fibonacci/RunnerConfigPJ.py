@@ -89,7 +89,7 @@ class RunnerConfig:
         For example, starting the target system to measure.
         Activities after starting the run should also be performed here."""
         fib_type = context.execute_run["fib_type"]
-        self.target = subprocess.Popen(["python3", f"examples/hello-world-fibonacci/fibonacci_{fib_type}.py"], cwd=self.ROOT_DIR)       
+        self.target = subprocess.Popen(["python3", f"fibonacci_{fib_type}.py"], cwd=self.ROOT_DIR)       
 
     def start_measurement(self, context: RunnerContext) -> None:
         """Perform any activity required for starting measurements."""
