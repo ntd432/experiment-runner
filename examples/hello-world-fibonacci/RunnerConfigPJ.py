@@ -91,7 +91,7 @@ class RunnerConfig:
         Activities after starting the run should also be performed here."""
         fib_type = context.execute_run["fib_type"]
         problem_size = context.execute_run["problem_size"]
-        self.target = subprocess.Popen(["python3", f"fibonacci_{fib_type}.py", str(problem_size)])       
+        self.target = subprocess.Popen(["python3", f"fibonacci_{fib_type}.py", str(problem_size)], cwd=self.ROOT_DIR)       
 
     def start_measurement(self, context: RunnerContext) -> None:
         """Perform any activity required for starting measurements."""
