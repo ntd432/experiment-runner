@@ -121,14 +121,14 @@ class RunnerConfig:
         """Perform any activity here required for stopping measurements."""
         # os.kill(self.profiler.pid, signal.SIGINT) # graceful shutdown of powerjoular
         # self.profiler.wait()
-        self.performance_profiler.kill()
-        self.performance_profiler.wait()
+        # self.performance_profiler.kill()
+        # self.performance_profiler.wait()
 
     def stop_run(self, context: RunnerContext) -> None:
         """Perform any activity here required for stopping the run.
         Activities after stopping the run should also be performed here."""
-        # self.target.kill()
-        # self.target.wait()
+        self.target.kill()
+        self.target.wait()
         self.timestamp_end = datetime.now()
 
     def populate_run_data(self, context: RunnerContext) -> Optional[Dict[str, Any]]:
