@@ -91,7 +91,7 @@ class RunnerConfig:
         Activities after starting the run should also be performed here."""
         fib_type = context.execute_run["fib_type"]
         problem_size = context.execute_run["problem_size"]
-        self.target = subprocess.Popen(["python3", f"fibonacci_{fib_type}.py", str(problem_size)], cwd=self.ROOT_DIR)       
+        self.target = subprocess.Popen(["python3", f"fibonacci_{fib_type}.py", str(problem_size)])       
 
     def start_measurement(self, context: RunnerContext) -> None:
         """Perform any activity required for starting measurements."""
@@ -115,7 +115,7 @@ class RunnerConfig:
 
     def interact(self, context: RunnerContext) -> None:
         """Perform any interaction with the running target system here, or block here until the target finishes."""
-        pass
+        self.target.wait()
 
     def stop_measurement(self, context: RunnerContext) -> None:
         """Perform any activity here required for stopping measurements."""
@@ -138,11 +138,12 @@ class RunnerConfig:
         
         psdf = pd.DataFrame(columns=['cpu_usage', 'memory_usage'])
         for i, l in enumerate(self.performance_profiler.stdout.readlines()):
-             decoded_line = l.decode('ascii').strip()
-             decoded_arr = decoded_line.split()
-             cpu_usage = float(decoded_arr[0])
-             memory_usage = float(decoded_arr[1])
-             psdf.loc[i] = [cpu_usage, memory_usage]
+            decoded_line = l.decode('ascii').strip()
+            decoded_arr = decoded_line.split()
+            cpu_usage = float(decoded_arr[0])
+            memory_usage = float(decoded_arr[1])
+            psdf.loc[i] = [cpu_usage, memory_usage]
+
         psdf.to_csv(context.run_dir / 'raw_data.csv', index=False)
 
         output_file = f'{context.run_dir}/powerjoular-filtered-data.csv-{self.target.pid}.csv'
