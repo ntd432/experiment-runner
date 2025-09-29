@@ -1,9 +1,7 @@
-import os
 import subprocess
 import shlex
 import pandas as pd
 import time
-import signal
 from datetime import datetime
 from EventManager.Models.RunnerEvents import RunnerEvents
 from EventManager.EventSubscriptionController import EventSubscriptionController
@@ -66,10 +64,6 @@ class RunnerConfig:
         factor2 = FactorModel("problem_size", [10])
         self.run_table_model = RunTableModel(
             factors=[factor1, factor2],
-            # exclude_combinations=[
-            #     {factor1: ['rec'], factor2: [5000]},
-            #     {factor1: ['mem', 'iter'], factor2: [35, 40]},  # all runs having the combination ("iter", 30) will be excluded
-            # ],
             repetitions = 1,
             data_columns=["energy", "runtime", "memory"]
         )
@@ -115,21 +109,15 @@ class RunnerConfig:
 
     def interact(self, context: RunnerContext) -> None:
         """Perform any interaction with the running target system here, or block here until the target finishes."""
-        # self.target.wait()
+        pass
 
     def stop_measurement(self, context: RunnerContext) -> None:
         """Perform any activity here required for stopping measurements."""
-        stdout = self.profiler.terminate()
-        # os.kill(self.profiler.pid, signal.SIGINT) # graceful shutdown of powerjoular
-        # self.profiler.wait()
-        self.performance_profiler.terminate()
-        # self.performance_profiler.wait()
+        stdout = self.profiler.stop(wait=True)
 
     def stop_run(self, context: RunnerContext) -> None:
         """Perform any activity here required for stopping the run.
         Activities after stopping the run should also be performed here."""
-        self.target.terminate()
-        # self.target.wait()
         self.timestamp_end = datetime.now()
 
     def populate_run_data(self, context: RunnerContext) -> Optional[Dict[str, Any]]:
@@ -139,12 +127,11 @@ class RunnerConfig:
         
         psdf = pd.DataFrame(columns=['cpu_usage', 'memory_usage'])
         for i, l in enumerate(self.performance_profiler.stdout.readlines()):
-            decoded_line = l.decode('ascii').strip()
-            decoded_arr = decoded_line.split()
-            cpu_usage = float(decoded_arr[0])
-            memory_usage = float(decoded_arr[1])
-            psdf.loc[i] = [cpu_usage, memory_usage]
-
+             decoded_line = l.decode('ascii').strip()
+             decoded_arr = decoded_line.split()
+             cpu_usage = float(decoded_arr[0])
+             memory_usage = float(decoded_arr[1])
+             psdf.loc[i] = [cpu_usage, memory_usage]
         psdf.to_csv(context.run_dir / 'raw_data.csv', index=False)
 
         output_file = f'{context.run_dir}/powerjoular-filtered-data.csv-{self.target.pid}.csv'
