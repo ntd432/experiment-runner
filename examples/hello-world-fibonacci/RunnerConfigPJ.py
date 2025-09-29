@@ -10,7 +10,6 @@ from ConfigValidator.Config.Models.FactorModel import FactorModel
 from ConfigValidator.Config.Models.RunnerContext import RunnerContext
 from ConfigValidator.Config.Models.OperationType import OperationType
 from ProgressManager.Output.OutputProcedure import OutputProcedure as output
-from Plugins.Profilers.EnergiBridge import EnergiBridge
 
 from typing import Dict, List, Any, Optional
 from pathlib import Path
