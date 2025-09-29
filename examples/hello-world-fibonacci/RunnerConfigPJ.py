@@ -2,6 +2,7 @@ import subprocess
 import shlex
 import pandas as pd
 import time
+import os, signal
 from datetime import datetime
 from EventManager.Models.RunnerEvents import RunnerEvents
 from EventManager.EventSubscriptionController import EventSubscriptionController
@@ -61,7 +62,7 @@ class RunnerConfig:
         """Create and return the run_table model here. A run_table is a List (rows) of tuples (columns),
         representing each run performed"""
         factor1 = FactorModel("fib_type", ['iter', 'mem', 'rec'])
-        factor2 = FactorModel("problem_size", [10])
+        factor2 = FactorModel("problem_size", [10, 35, 40, 5000, 10000])
         self.run_table_model = RunTableModel(
             factors=[factor1, factor2],
             # exclude_combinations=[
@@ -118,11 +119,16 @@ class RunnerConfig:
 
     def stop_measurement(self, context: RunnerContext) -> None:
         """Perform any activity here required for stopping measurements."""
-        stdout = self.profiler.stop(wait=True)
+        os.kill(self.profiler.pid, signal.SIGINT) # graceful shutdown of powerjoular
+        self.profiler.wait()
+        self.performance_profiler.kill()
+        self.performance_profiler.wait()
 
     def stop_run(self, context: RunnerContext) -> None:
         """Perform any activity here required for stopping the run.
         Activities after stopping the run should also be performed here."""
+        self.target.kill()
+        self.target.wait()
         self.timestamp_end = datetime.now()
 
     def populate_run_data(self, context: RunnerContext) -> Optional[Dict[str, Any]]:
@@ -138,7 +144,6 @@ class RunnerConfig:
              memory_usage = float(decoded_arr[1])
              psdf.loc[i] = [cpu_usage, memory_usage]
         psdf.to_csv(context.run_dir / 'raw_data.csv', index=False)
-        print("CPU percentage, memory values", decoded_arr)
 
         output_file = f'{context.run_dir}/powerjoular-filtered-data.csv-{self.target.pid}.csv'
         df = pd.read_csv(context.run_dir / f"powerjoular.csv-{self.target.pid}.csv")
