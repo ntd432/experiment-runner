@@ -119,10 +119,30 @@ class RunnerConfig:
 
     def stop_measurement(self, context: RunnerContext) -> None:
         """Perform any activity here required for stopping measurements."""
-        os.kill(self.profiler.pid, signal.SIGINT) # graceful shutdown of powerjoular
-        self.profiler.wait()
-        self.performance_profiler.kill()
-        self.performance_profiler.wait()
+        # First, stop PowerJoular gracefully
+        if self.profiler and self.profiler.poll() is None:  # still running
+            try:
+                self.profiler.terminate()   # send SIGTERM (cleaner than SIGINT)
+                try:
+                    self.profiler.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    # fallback if it refuses to exit
+                    self.profiler.kill()
+                    self.profiler.wait()
+            except Exception as e:
+                print(f"Warning: could not terminate PowerJoular cleanly: {e}")
+
+        # Then, stop the performance profiler loop
+        if self.performance_profiler and self.performance_profiler.poll() is None:
+            try:
+                self.performance_profiler.terminate()
+                try:
+                    self.performance_profiler.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    self.performance_profiler.kill()
+                    self.performance_profiler.wait()
+            except Exception as e:
+                print(f"Warning: could not terminate performance_profiler cleanly: {e}")
 
     def stop_run(self, context: RunnerContext) -> None:
         """Perform any activity here required for stopping the run.
@@ -135,7 +155,6 @@ class RunnerConfig:
         """Parse and process any measurement data here.
         You can also store the raw measurement data under `context.run_dir`
         Returns a dictionary with keys `self.run_table_model.data_columns` and their values populated"""
-        exit()
         
         psdf = pd.DataFrame(columns=['cpu_usage', 'memory_usage'])
         for i, l in enumerate(self.performance_profiler.stdout.readlines()):
@@ -145,7 +164,7 @@ class RunnerConfig:
             memory_usage = float(decoded_arr[1])
             psdf.loc[i] = [cpu_usage, memory_usage]
 
-        # psdf.to_csv(context.run_dir / 'raw_data.csv', index=False)
+        psdf.to_csv(context.run_dir / 'raw_data.csv', index=False)
 
         output_file = f'{context.run_dir}/powerjoular-filtered-data.csv-{self.target.pid}.csv'
         df = pd.read_csv(context.run_dir / f"powerjoular.csv-{self.target.pid}.csv")
