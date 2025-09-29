@@ -144,7 +144,6 @@ class RunnerConfig:
              memory_usage = float(decoded_arr[1])
              psdf.loc[i] = [cpu_usage, memory_usage]
         psdf.to_csv(context.run_dir / 'raw_data.csv', index=False)
-        print("CPU percentage, memory values", decoded_arr)
 
         output_file = f'{context.run_dir}/powerjoular-filtered-data.csv-{self.target.pid}.csv'
         df = pd.read_csv(context.run_dir / f"powerjoular.csv-{self.target.pid}.csv")
