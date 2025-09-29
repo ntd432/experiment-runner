@@ -65,11 +65,11 @@ class RunnerConfig:
         factor2 = FactorModel("problem_size", [10, 35, 40, 5000, 10000])
         self.run_table_model = RunTableModel(
             factors=[factor1, factor2],
-            # exclude_combinations=[
-            #     {factor2: [10]},   # all runs having treatment "10" will be excluded
-            #     {factor1: ['rec'], factor2: [5000, 10000]},
-            #     {factor1: ['mem', 'iter'], factor2: [35, 40]},  # all runs having the combination ("iter", 30) will be excluded
-            # ],
+            exclude_combinations=[
+                {factor2: [10]},   # all runs having treatment "10" will be excluded
+                {factor1: ['rec'], factor2: [5000, 10000]},
+                {factor1: ['mem', 'iter'], factor2: [35, 40]},  # all runs having the combination ("iter", 30) will be excluded
+            ],
             repetitions = 1,
             data_columns=["energy", "runtime", "memory"]
         )
