@@ -62,8 +62,9 @@ class RunnerConfig:
         """Create and return the run_table model here. A run_table is a List (rows) of tuples (columns),
         representing each run performed"""
         cpu_limit_factor = FactorModel("cpu_limit", [25, 50, 100])
+        treatment_factor = FactorModel("treatment", ["guideline", "no_guideline"])
         self.run_table_model = RunTableModel(
-            factors = [cpu_limit_factor],
+            factors = [treatment_factor],
             data_columns=['cpu_usage', 'energy_usage', 'execution_time', 'memory_usage']
         )
         return self.run_table_model
@@ -83,10 +84,14 @@ class RunnerConfig:
         For example, starting the target system to measure.
         Activities after starting the run should also be performed here."""
         
-        cpu_limit = context.execute_run['cpu_limit']
+        # cpu_limit = context.execute_run['cpu_limit']
+        treatment = context.execute_run["treatment"]
 
         # start the target
-        self.target = subprocess.Popen(['python', './primer.py'],
+        # self.target = subprocess.Popen(['python', './primer.py'],
+        #     stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.ROOT_DIR,
+        # )
+        self.target = subprocess.Popen(['python3', f"examples/linux-powerjoular-profiling/{treatment}.py"],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.ROOT_DIR,
         )
 
@@ -97,7 +102,7 @@ class RunnerConfig:
                                                      )
 
         # Configure the environment based on the current variation
-        subprocess.check_call(f'cpulimit -p {self.target.pid} --limit {cpu_limit} &', shell=True)
+        # subprocess.check_call(f'cpulimit -p {self.target.pid} --limit {cpu_limit} &', shell=True)
         
         time.sleep(1) # allow the process to run a little before measuring
 
@@ -115,8 +120,7 @@ class RunnerConfig:
 
         # No interaction. We just run it for XX seconds.
         # Another example would be to wait for the target to finish, e.g. via `self.target.wait()`
-        output.console_log("Running program for 20 seconds")
-        time.sleep(20)
+        pass
 
     def stop_measurement(self, context: RunnerContext) -> None:
         """Perform any activity here required for stopping measurements."""
