@@ -64,7 +64,7 @@ class RunnerConfig:
         cpu_limit_factor = FactorModel("cpu_limit", [25, 50, 100])
         self.run_table_model = RunTableModel(
             factors = [cpu_limit_factor],
-            data_columns=['cpu_usage', 'total_energy', 'execution_time', 'memory_usage']
+            data_columns=['cpu_usage', 'energy_usage', 'execution_time', 'memory_usage']
         )
         return self.run_table_model
 
