@@ -129,6 +129,8 @@ class RunnerConfig:
         Activities after stopping the run should also be performed here."""
         self.target.kill()
         self.target.wait()
+        self.performance_profiler.kill()
+        self.performance_profiler.wait()
         self.timestamp_end = datetime.now()
     
     def populate_run_data(self, context: RunnerContext) -> Optional[Dict[str, Any]]:
