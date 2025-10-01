@@ -1,3 +1,4 @@
+from datetime import datetime
 from EventManager.Models.RunnerEvents import RunnerEvents
 from EventManager.EventSubscriptionController import EventSubscriptionController
 from ConfigValidator.Config.Models.RunTableModel import RunTableModel
@@ -15,9 +16,12 @@ from os.path import dirname, realpath
 import time
 import subprocess
 import numpy as np
+import pandas as pd
 
 class RunnerConfig:
     ROOT_DIR = Path(dirname(realpath(__file__)))
+    timestamp_start  = None
+    timestamp_end  = None
 
     # ================================ USER SPECIFIC CONFIG ================================
     """The name of the experiment."""
@@ -72,7 +76,7 @@ class RunnerConfig:
     def before_run(self) -> None:
         """Perform any activity required before starting a run.
         No context is available here as the run is not yet active (BEFORE RUN)"""
-        pass
+        self.timestamp_start = datetime.now()
 
     def start_run(self, context: RunnerContext) -> None:
         """Perform any activity required for starting the run here.
@@ -85,6 +89,12 @@ class RunnerConfig:
         self.target = subprocess.Popen(['python', './primer.py'],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.ROOT_DIR,
         )
+
+        performance_profiler_cmd = f"ps -p {self.target.pid} --noheader -o '%mem'"
+        timer_cmd = f"while true; do {performance_profiler_cmd}; sleep 1; done"
+        self.performance_profiler = subprocess.Popen(['sh', '-c', timer_cmd],
+                                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                                                     )
 
         # Configure the environment based on the current variation
         subprocess.check_call(f'cpulimit -p {self.target.pid} --limit {cpu_limit} &', shell=True)
@@ -117,14 +127,22 @@ class RunnerConfig:
     def stop_run(self, context: RunnerContext) -> None:
         """Perform any activity here required for stopping the run.
         Activities after stopping the run should also be performed here."""
-
         self.target.kill()
         self.target.wait()
+        self.timestamp_end = datetime.now()
     
     def populate_run_data(self, context: RunnerContext) -> Optional[Dict[str, Any]]:
         """Parse and process any measurement data here.
         You can also store the raw measurement data under `context.run_dir`
         Returns a dictionary with keys `self.run_table_model.data_columns` and their values populated"""
+
+        psdf = pd.DataFrame(columns=['memory_usage'])
+        for i, l in enumerate(self.performance_profiler.stdout.readlines()):
+             decoded_line = l.decode('ascii').strip()
+             decoded_arr = decoded_line.split()
+             memory_usage = float(decoded_arr[0])
+             psdf.loc[i] = [memory_usage]
+        psdf.to_csv(context.run_dir / 'mem_data.csv', index=False)
         
         out_file = context.run_dir / "powerjoular.csv"
 
@@ -133,8 +151,10 @@ class RunnerConfig:
         # a second csv for that target will be generated
         # results_process = self.meter.parse_log(self.meter.target_logfile)
         return {
-            'avg_cpu': round(np.mean(list(results_global['CPU Utilization'].values())), 3),
-            'total_energy': round(sum(list(results_global['CPU Power'].values())), 3),
+            "execution_time": (self.timestamp_end - self.timestamp_start).total_seconds(),
+            'cpu_usage': round(np.mean(list(results_global['CPU Utilization'].values())), 3),
+            'memory_usage': round(psdf['memory_usage'].mean(), 3),
+            'energy_usage': round(sum(list(results_global['CPU Power'].values())), 3),
         }
 
     def after_experiment(self) -> None:
